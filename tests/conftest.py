@@ -252,7 +252,7 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
+        "id": "fe946161-066d-4669-b362-1b354fcf7f92",
         "nickname": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
@@ -263,4 +263,4 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {"email": "john.doe@example.com", "password": "SecurePassword123!"}
