@@ -11,6 +11,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      SMTP_SERVER: ${{ vars.SMTP_SERVER }}
+      SMTP_PORT: ${{ vars.SMTP_PORT }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+    
     strategy:
       matrix:
         python-version: [3.10.12] # Define Python versions here
@@ -39,6 +47,14 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+      
+      - name: Debug environment variables
+        run: |
+          echo "SMTP_SERVER: ${{ vars.SMTP_SERVER }}"
+          echo "SMTP_PORT: ${{ vars.SMTP_PORT }}"
+          # Avoid printing sensitive information
+          echo "SMTP_USERNAME is set"
+          echo "SMTP_PASSWORD is set"
       
       - name: Install dependencies
         run: |
@@ -70,15 +86,15 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: kaw393939/wis_club_api:${{ github.sha }} # Uses the Git SHA for tagging
+          tags: jderikito1/is601-homework10:${{ github.sha }} # Uses the Git SHA for tagging
           platforms: linux/amd64,linux/arm64 # Multi-platform support
-          cache-from: type=registry,ref=kaw393939/wis_club_api:cache
+          cache-from: type=registry,ref=jderikito1/is601-homework10:cache
           cache-to: type=inline,mode=max
           
       - name: Scan the Docker image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'kaw393939/wis_club_api:${{ github.sha }}'
+          image-ref: 'jderikito1/is601-homework10:${{ github.sha }}'
           format: 'table'
           exit-code: '1' # Fail the job if vulnerabilities are found
           ignore-unfixed: true
