@@ -1,4 +1,5 @@
 from builtins import str
+from faker import Faker
 import pytest
 from httpx import AsyncClient
 from app.main import app
@@ -6,6 +7,8 @@ from app.models.user_model import User
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
+
+fake = Faker()
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
@@ -21,6 +24,39 @@ async def test_create_user_access_denied(async_client, user_token, email_service
     response = await async_client.post("/users/", json=user_data, headers=headers)
     # Asserts
     assert response.status_code == 403
+
+@pytest.mark.asyncio
+async def test_create_admin_access_different_usernames(async_client, admin_token):
+    user_data_too_short = {
+        "nickname": "short",
+        "email": "test@example.com",
+        "password": "sS#fdasrongPassword123!",
+    }
+    user_data_too_long = {
+        "nickname": "0123456789012345678901",
+        "email": "test@example.com",
+        "password": "sS#fdasrongPassword123!",
+    }
+    user_data_invalid_character = {
+        "nickname": "password!",
+        "email": "test@example.com",
+        "password": "sS#fdasrongPassword123!",
+    }
+    user_data_valid_username = {
+        "nickname": "joe_cool_123",
+        "email": "test@example.com",
+        "password": "sS#fdasrongPassword123!",
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=user_data_too_short, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.post("/users/", json=user_data_too_long, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.post("/users/", json=user_data_invalid_character, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.post("/users/", json=user_data_valid_username, headers=headers)
+    assert response.status_code == 201
+    assert response.json()["nickname"] == user_data_valid_username["nickname"]
 
 # You can similarly refactor other test functions to use the async_client fixture
 @pytest.mark.asyncio
@@ -51,6 +87,23 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
     assert response.status_code == 200
     assert response.json()["email"] == updated_data["email"]
 
+@pytest.mark.asyncio
+async def test_update_nicknames(async_client, admin_user, admin_token):
+    updated_data_too_short = {"nickname": "short"}
+    updated_data_too_long = {"nickname": "0123456789012345678901"}
+    updated_data_invalid_character = {"nickname": "password!"}
+    updated_data_valid_username = {"nickname": "joe_cool_123"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_too_short, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_too_long, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_invalid_character, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_valid_username, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["nickname"] == updated_data_valid_username["nickname"]
+
 
 @pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
@@ -78,6 +131,31 @@ async def test_create_user_invalid_email(async_client):
         "password": "ValidPassword123!",
     }
     response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_register_user_invalid_nicknames(async_client):
+    unique_email = fake.email()
+    user_data_too_short = {
+        "email": unique_email,
+        "password": "ValidPassword123!",
+        "nickname": "short",
+    }
+    user_data_too_long = {
+        "email": unique_email,
+        "password": "ValidPassword123!",
+        "nickname": "123456789012345678901",
+    }
+    user_data_invalid_character = {
+        "email": unique_email,
+        "password": "ValidPassword123!",
+        "nickname": "password!",
+    }
+    response = await async_client.post("/register/", json=user_data_too_short)
+    assert response.status_code == 422
+    response = await async_client.post("/register/", json=user_data_too_long)
+    assert response.status_code == 422
+    response = await async_client.post("/register/", json=user_data_invalid_character)
     assert response.status_code == 422
 
 import pytest
