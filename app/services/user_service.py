@@ -1,5 +1,7 @@
 from builtins import Exception, bool, classmethod, int, str
 from datetime import datetime, timezone
+from http.client import HTTPException
+import re
 import secrets
 from typing import Optional, Dict, List
 from pydantic import ValidationError
@@ -60,10 +62,11 @@ class UserService:
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             new_user = User(**validated_data)
             new_user.verification_token = generate_verification_token()
-            new_nickname = generate_nickname()
-            while await cls.get_by_nickname(session, new_nickname):
+            if 'nickname' not in validated_data or validated_data['nickname'] is None:
                 new_nickname = generate_nickname()
-            new_user.nickname = new_nickname
+                while await cls.get_by_nickname(session, new_nickname):
+                    new_nickname = generate_nickname()
+                new_user.nickname = new_nickname
             session.add(new_user)
             await session.commit()
             await email_service.send_verification_email(new_user)

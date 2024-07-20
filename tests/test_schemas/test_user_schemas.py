@@ -15,6 +15,7 @@ def test_user_create_valid(user_create_data):
     user = UserCreate(**user_create_data)
     assert user.nickname == user_create_data["nickname"]
     assert user.password == user_create_data["password"]
+    assert user.email == user_create_data["email"]
 
 # Tests for UserUpdate
 def test_user_update_valid(user_update_data):
