@@ -36,7 +36,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    password: str = Field(..., example="Secure*1234")
+    password: str = Field(..., min_length=8, example="Secure*1234")
     nickname: Optional[str] = Field(None, min_length=6, max_length=20, pattern=r'^[\w-]+$', example="john_doe_123")
 
 class UserUpdate(UserBase):
@@ -65,7 +65,7 @@ class UserResponse(UserBase):
 
 class LoginRequest(BaseModel):
     email: str = Field(..., example="john.doe@example.com")
-    password: str = Field(..., example="Secure*1234")
+    password: str = Field(..., min_length=8, example="Secure*1234")
 
 class ErrorResponse(BaseModel):
     error: str = Field(..., example="Not Found")

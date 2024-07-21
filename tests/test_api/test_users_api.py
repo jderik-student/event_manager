@@ -194,6 +194,27 @@ async def test_register_user_invalid_nicknames(async_client, verified_user):
     response = await async_client.post("/register/", json=user_data_duplicate_nickname)
     assert response.status_code == 400
 
+@pytest.mark.asyncio
+async def test_register_user_invalid_length_password(async_client, verified_user):
+    user_data_too_short_password = {
+        "email": fake.email(),
+        "password": "pass",
+        "nickname": "joe_cool_123",
+    }
+    response = await async_client.post("/register/", json=user_data_too_short_password)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_create_user_invalid_length_password(async_client, admin_token):
+    user_data_too_short_password = {
+        "nickname": "joe_cool_123",
+        "email": "test@example.com",
+        "password": "pass",
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=user_data_too_short_password, headers=headers)
+    assert response.status_code == 422
+
 import pytest
 from app.services.jwt_service import decode_token
 from urllib.parse import urlencode
