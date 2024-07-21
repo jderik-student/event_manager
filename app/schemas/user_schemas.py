@@ -20,6 +20,26 @@ def validate_url(url: Optional[str]) -> Optional[str]:
         raise ValueError('Invalid URL format')
     return url
 
+def validate_image_url(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return value
+    if not value.lower().endswith(('.png', '.jpg', '.jpeg')):
+        raise ValueError('URL must end with .png, .jpg, or .jpeg')
+    return value
+
+def validate_password(value: str) -> str:
+    if not re.search(r'[A-Z]', value):
+            raise ValueError('Password must contain at least one uppercase letter')
+    if not re.search(r'[a-z]', value):
+        raise ValueError('Password must contain at least one lowercase letter')
+    if not re.search(r'\d', value):
+        raise ValueError('Password must contain at least one digit')
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
+        raise ValueError('Password must contain at least one special character')
+    if not re.match(r'^[A-Za-z\d!@#$%^&*(),.?":{}|<>]+$', value):
+        raise ValueError('Password can only contain uppercase letters, lowercase letters, digits, and special characters !@#$%^&*(),.?":{}|<>')
+    return value
+
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
     nickname: Optional[str] = Field(None, min_length=6, max_length=20, pattern=r'^[\w-]+$', example="john_doe_123")
@@ -31,6 +51,8 @@ class UserBase(BaseModel):
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
+    _validate_image_url = validator('profile_picture_url', pre=True, allow_reuse=True)(validate_image_url)
+    
     class Config:
         from_attributes = True
 
@@ -41,17 +63,7 @@ class UserCreate(UserBase):
 
     @validator('password')
     def password_validator(cls, value):
-        if not re.search(r'[A-Z]', value):
-            raise ValueError('Password must contain at least one uppercase letter')
-        if not re.search(r'[a-z]', value):
-            raise ValueError('Password must contain at least one lowercase letter')
-        if not re.search(r'\d', value):
-            raise ValueError('Password must contain at least one digit')
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
-            raise ValueError('Password must contain at least one special character')
-        if not re.match(r'^[A-Za-z\d!@#$%^&*(),.?":{}|<>]+$', value):
-            raise ValueError('Password can only contain uppercase letters, lowercase letters, digits, and special characters !@#$%^&*(),.?":{}|<>')
-        return value
+        return validate_password(value)
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
@@ -83,17 +95,7 @@ class LoginRequest(BaseModel):
 
     @validator('password')
     def password_validator(cls, value):
-        if not re.search(r'[A-Z]', value):
-            raise ValueError('Password must contain at least one uppercase letter')
-        if not re.search(r'[a-z]', value):
-            raise ValueError('Password must contain at least one lowercase letter')
-        if not re.search(r'\d', value):
-            raise ValueError('Password must contain at least one digit')
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
-            raise ValueError('Password must contain at least one special character')
-        if not re.match(r'^[A-Za-z\d!@#$%^&*(),.?":{}|<>]+$', value):
-            raise ValueError('Password can only contain uppercase letters, lowercase letters, digits, and special characters !@#$%^&*(),.?":{}|<>')
-        return value
+        return validate_password(value)
 
 class ErrorResponse(BaseModel):
     error: str = Field(..., example="Not Found")
