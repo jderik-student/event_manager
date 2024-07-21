@@ -205,14 +205,82 @@ async def test_register_user_invalid_length_password(async_client, verified_user
     assert response.status_code == 422
 
 @pytest.mark.asyncio
-async def test_create_user_invalid_length_password(async_client, admin_token):
-    user_data_too_short_password = {
+async def test_register_user_invalid_password_complexity(async_client, verified_user):
+    unique_email = fake.email()
+    user_data_no_uppercase_password = {
+        "email": unique_email,
+        "password": "password1!",
         "nickname": "joe_cool_123",
-        "email": "test@example.com",
-        "password": "pass",
+    }
+    user_data_no_lowercase_password = {
+        "email": unique_email,
+        "password": "PASSWORD1!",
+        "nickname": "joe_cool_123",
+    }
+    user_data_no_digit_password = {
+        "email": unique_email,
+        "password": "Password!",
+        "nickname": "joe_cool_123",
+    }
+    user_data_no_special_char_password = {
+        "email": unique_email,
+        "password": "Password1",
+        "nickname": "joe_cool_123",
+    }
+    user_data_invalid_character_password = {
+        "email": unique_email,
+        "password": "Password 1!",
+        "nickname": "joe_cool_123",
+    }
+    response = await async_client.post("/register/", json=user_data_no_uppercase_password)
+    assert response.status_code == 422
+    response = await async_client.post("/register/", json=user_data_no_lowercase_password)
+    assert response.status_code == 422
+    response = await async_client.post("/register/", json=user_data_no_digit_password)
+    assert response.status_code == 422
+    response = await async_client.post("/register/", json=user_data_no_special_char_password)
+    assert response.status_code == 422
+    response = await async_client.post("/register/", json=user_data_invalid_character_password)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_create_user_invalid_length_password(async_client, admin_token):
+    unique_email = fake.email()
+    user_data_no_uppercase_password = {
+        "email": unique_email,
+        "password": "password1!",
+        "nickname": "joe_cool_123",
+    }
+    user_data_no_lowercase_password = {
+        "email": unique_email,
+        "password": "PASSWORD1!",
+        "nickname": "joe_cool_123",
+    }
+    user_data_no_digit_password = {
+        "email": unique_email,
+        "password": "Password!",
+        "nickname": "joe_cool_123",
+    }
+    user_data_no_special_char_password = {
+        "email": unique_email,
+        "password": "Password1",
+        "nickname": "joe_cool_123",
+    }
+    user_data_invalid_character_password = {
+        "email": unique_email,
+        "password": "Password 1!",
+        "nickname": "joe_cool_123",
     }
     headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.post("/users/", json=user_data_too_short_password, headers=headers)
+    response = await async_client.post("/users/", json=user_data_no_uppercase_password, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.post("/users/", json=user_data_no_lowercase_password, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.post("/users/", json=user_data_no_digit_password, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.post("/users/", json=user_data_no_special_char_password, headers=headers)
+    assert response.status_code == 422
+    response = await async_client.post("/users/", json=user_data_invalid_character_password, headers=headers)
     assert response.status_code == 422
 
 import pytest

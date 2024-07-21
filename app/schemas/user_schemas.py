@@ -39,6 +39,20 @@ class UserCreate(UserBase):
     password: str = Field(..., min_length=8, example="Secure*1234")
     nickname: Optional[str] = Field(None, min_length=6, max_length=20, pattern=r'^[\w-]+$', example="john_doe_123")
 
+    @validator('password')
+    def password_validator(cls, value):
+        if not re.search(r'[A-Z]', value):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', value):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'\d', value):
+            raise ValueError('Password must contain at least one digit')
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
+            raise ValueError('Password must contain at least one special character')
+        if not re.match(r'^[A-Za-z\d!@#$%^&*(),.?":{}|<>]+$', value):
+            raise ValueError('Password can only contain uppercase letters, lowercase letters, digits, and special characters !@#$%^&*(),.?":{}|<>')
+        return value
+
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
     nickname: Optional[str] = Field(None, min_length=6, max_length=20, pattern=r'^[\w-]+$', example="john_doe_123")
@@ -66,6 +80,20 @@ class UserResponse(UserBase):
 class LoginRequest(BaseModel):
     email: str = Field(..., example="john.doe@example.com")
     password: str = Field(..., min_length=8, example="Secure*1234")
+
+    @validator('password')
+    def password_validator(cls, value):
+        if not re.search(r'[A-Z]', value):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', value):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'\d', value):
+            raise ValueError('Password must contain at least one digit')
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
+            raise ValueError('Password must contain at least one special character')
+        if not re.match(r'^[A-Za-z\d!@#$%^&*(),.?":{}|<>]+$', value):
+            raise ValueError('Password can only contain uppercase letters, lowercase letters, digits, and special characters !@#$%^&*(),.?":{}|<>')
+        return value
 
 class ErrorResponse(BaseModel):
     error: str = Field(..., example="Not Found")
