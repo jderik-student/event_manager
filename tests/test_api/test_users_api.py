@@ -195,7 +195,7 @@ async def test_register_user_invalid_nicknames(async_client, verified_user):
     assert response.status_code == 400
 
 @pytest.mark.asyncio
-async def test_register_user_invalid_length_password(async_client, verified_user):
+async def test_register_user_invalid_length_password(async_client):
     user_data_too_short_password = {
         "email": fake.email(),
         "password": "pass",
@@ -205,7 +205,7 @@ async def test_register_user_invalid_length_password(async_client, verified_user
     assert response.status_code == 422
 
 @pytest.mark.asyncio
-async def test_register_user_invalid_password_complexity(async_client, verified_user):
+async def test_register_user_invalid_password_complexity(async_client):
     unique_email = fake.email()
     user_data_no_uppercase_password = {
         "email": unique_email,
@@ -281,6 +281,93 @@ async def test_create_user_invalid_length_password(async_client, admin_token):
     response = await async_client.post("/users/", json=user_data_no_special_char_password, headers=headers)
     assert response.status_code == 422
     response = await async_client.post("/users/", json=user_data_invalid_character_password, headers=headers)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_register_user_profile_picture_URL(async_client):
+    user_data_jpg = {
+        "email": fake.email(),
+        "password": "Password1!",
+        "nickname": "joe_cool_123",
+        "profile_picture_url": "https://example.com/profiles/john.jpg"
+    }
+    user_data_jpeg = {
+        "email": fake.email(),
+        "password": "Password1!",
+        "nickname": "joe_cool_1234",
+        "profile_picture_url": "https://example.com/profiles/john.jpeg"
+    }
+    user_data_png = {
+        "email": fake.email(),
+        "password": "Password1!",
+        "nickname": "joe_cool_1235",
+        "profile_picture_url": "https://example.com/profiles/john.png"
+    }
+    user_data_invalid_image = {
+        "email": fake.email(),
+        "password": "Password1!",
+        "nickname": "joe_cool_1236",
+        "profile_picture_url": "https://example.com/profiles/john.pdf"
+    }
+    response = await async_client.post("/register/", json=user_data_jpg)
+    assert response.status_code == 200
+    response = await async_client.post("/register/", json=user_data_jpeg)
+    assert response.status_code == 200
+    response = await async_client.post("/register/", json=user_data_png)
+    assert response.status_code == 200
+    response = await async_client.post("/register/", json=user_data_invalid_image)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_create_user_user_profile_picture_URL(async_client, admin_token):
+    user_data_jpg = {
+        "email": fake.email(),
+        "password": "Password1!",
+        "nickname": "joe_cool_123",
+        "profile_picture_url": "https://example.com/profiles/john.jpg"
+    }
+    user_data_jpeg = {
+        "email": fake.email(),
+        "password": "Password1!",
+        "nickname": "joe_cool_1234",
+        "profile_picture_url": "https://example.com/profiles/john.jpeg"
+    }
+    user_data_png = {
+        "email": fake.email(),
+        "password": "Password1!",
+        "nickname": "joe_cool_1235",
+        "profile_picture_url": "https://example.com/profiles/john.png"
+    }
+    user_data_invalid_image = {
+        "email": fake.email(),
+        "password": "Password1!",
+        "nickname": "joe_cool_1236",
+        "profile_picture_url": "https://example.com/profiles/john.pdf"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=user_data_jpg, headers=headers)
+    assert response.status_code == 201
+    response = await async_client.post("/users/", json=user_data_jpeg, headers=headers)
+    assert response.status_code == 201
+    response = await async_client.post("/users/", json=user_data_png, headers=headers)
+    assert response.status_code == 201
+    response = await async_client.post("/users/", json=user_data_invalid_image, headers=headers)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_update_profile_picture_url(async_client, admin_user, admin_token):
+    user_data_jpg = {"profile_picture_url": "https://example.com/profiles/john1.jpg"}
+    user_data_jpeg = {"profile_picture_url": "https://example.com/profiles/john1.jpeg"}
+    user_data_png = {"profile_picture_url": "https://example.com/profiles/john1.png"}
+    user_data_invalid_image = {"profile_picture_url": "https://example.com/profiles/john1.pdf"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=user_data_jpg, headers=headers)
+    assert response.status_code == 200
+    response = await async_client.put(f"/users/{admin_user.id}", json=user_data_jpeg, headers=headers)
+    assert response.status_code == 200
+    response = await async_client.put(f"/users/{admin_user.id}", json=user_data_png, headers=headers)
+    assert response.status_code == 200
+    response = await async_client.put(f"/users/{admin_user.id}", json=user_data_invalid_image, headers=headers)
     assert response.status_code == 422
 
 import pytest
