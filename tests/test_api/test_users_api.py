@@ -26,7 +26,7 @@ async def test_create_user_access_denied(async_client, user_token, email_service
     assert response.status_code == 403
 
 @pytest.mark.asyncio
-async def test_create_admin_access_different_usernames(async_client, admin_token):
+async def test_create_admin_access_different_usernames(async_client, verified_user, admin_token):
     user_data_too_short = {
         "nickname": "short",
         "email": "test@example.com",
@@ -38,7 +38,12 @@ async def test_create_admin_access_different_usernames(async_client, admin_token
         "password": "sS#fdasrongPassword123!",
     }
     user_data_invalid_character = {
-        "nickname": "password!",
+        "nickname": "nickname!",
+        "email": "test@example.com",
+        "password": "sS#fdasrongPassword123!",
+    }
+    user_data_duplicate_username = {
+        "nickname": verified_user.nickname,
         "email": "test@example.com",
         "password": "sS#fdasrongPassword123!",
     }
@@ -54,6 +59,8 @@ async def test_create_admin_access_different_usernames(async_client, admin_token
     assert response.status_code == 422
     response = await async_client.post("/users/", json=user_data_invalid_character, headers=headers)
     assert response.status_code == 422
+    response = await async_client.post("/users/", json=user_data_duplicate_username, headers=headers)
+    assert response.status_code == 400
     response = await async_client.post("/users/", json=user_data_valid_username, headers=headers)
     assert response.status_code == 201
     assert response.json()["nickname"] == user_data_valid_username["nickname"]
@@ -88,10 +95,11 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
     assert response.json()["email"] == updated_data["email"]
 
 @pytest.mark.asyncio
-async def test_update_nicknames(async_client, admin_user, admin_token):
+async def test_update_nicknames(async_client, admin_user, admin_token, verified_user):
     updated_data_too_short = {"nickname": "short"}
     updated_data_too_long = {"nickname": "0123456789012345678901"}
-    updated_data_invalid_character = {"nickname": "password!"}
+    updated_data_invalid_character = {"nickname": "nickname!"}
+    updated_data_duplicate_nickname = {"nickname": verified_user.nickname}
     updated_data_valid_username = {"nickname": "joe_cool_123"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_too_short, headers=headers)
@@ -100,6 +108,8 @@ async def test_update_nicknames(async_client, admin_user, admin_token):
     assert response.status_code == 422
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_invalid_character, headers=headers)
     assert response.status_code == 422
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_duplicate_nickname, headers=headers)
+    assert response.status_code == 400
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_valid_username, headers=headers)
     assert response.status_code == 200
     assert response.json()["nickname"] == updated_data_valid_username["nickname"]
@@ -115,12 +125,31 @@ async def test_delete_user(async_client, admin_user, admin_token):
     assert fetch_response.status_code == 404
 
 @pytest.mark.asyncio
-async def test_create_user_duplicate_email(async_client, verified_user):
+async def test_register_user_duplicate_email(async_client, verified_user):
     user_data = {
         "email": verified_user.email,
         "password": "AnotherPassword123!",
     }
     response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 400
+    assert "Email already exists" in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_create_user_duplicate_email(async_client, verified_user, admin_token):
+    user_data = {"nickname": "joe_cool_1234",
+                 "email": verified_user.email,
+                 "password": "sS#fdasrongPassword123!", 
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=user_data, headers=headers)
+    assert response.status_code == 400
+    assert "Email already exists" in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_update_user_duplicate_email(async_client, admin_user, admin_token, verified_user):
+    user_data = {"email": verified_user.email}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=user_data, headers=headers)
     assert response.status_code == 400
     assert "Email already exists" in response.json().get("detail", "")
 
@@ -134,7 +163,7 @@ async def test_create_user_invalid_email(async_client):
     assert response.status_code == 422
 
 @pytest.mark.asyncio
-async def test_register_user_invalid_nicknames(async_client):
+async def test_register_user_invalid_nicknames(async_client, verified_user):
     unique_email = fake.email()
     user_data_too_short = {
         "email": unique_email,
@@ -149,7 +178,12 @@ async def test_register_user_invalid_nicknames(async_client):
     user_data_invalid_character = {
         "email": unique_email,
         "password": "ValidPassword123!",
-        "nickname": "password!",
+        "nickname": "nickname!",
+    }
+    user_data_duplicate_nickname = {
+        "email": unique_email,
+        "password": "ValidPassword123!",
+        "nickname": verified_user.nickname,
     }
     response = await async_client.post("/register/", json=user_data_too_short)
     assert response.status_code == 422
@@ -157,6 +191,8 @@ async def test_register_user_invalid_nicknames(async_client):
     assert response.status_code == 422
     response = await async_client.post("/register/", json=user_data_invalid_character)
     assert response.status_code == 422
+    response = await async_client.post("/register/", json=user_data_duplicate_nickname)
+    assert response.status_code == 400
 
 import pytest
 from app.services.jwt_service import decode_token
